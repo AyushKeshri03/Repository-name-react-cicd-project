@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'JDK25'
+    }
+
     stages {
 
         stage('Checkout') {
@@ -53,6 +57,7 @@ pipeline {
         success {
             echo 'CI/CD Pipeline completed successfully!'
         }
+
         failure {
             echo 'Pipeline failed!'
         }
