@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        sonarQubeScanner 'SonarQube Scanner'
+        sonarRunner 'SonarQube Scanner'
     }
 
     stages {
@@ -27,8 +27,7 @@ pipeline {
                         sonar-scanner ^
                         -Dsonar.projectKey=react-cicd-project ^
                         -Dsonar.projectName=react-cicd-project ^
-                        -Dsonar.sources=src ^
-                        -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                        -Dsonar.sources=src
                     '''
                 }
             }
