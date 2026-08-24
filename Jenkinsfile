@@ -7,6 +7,8 @@ pipeline {
         IMAGE_NAME = 'react-cicd-project'
         IMAGE_TAG = 'latest'
 
+        CONTAINER_NAME = 'react-cicd-container'
+
         TRIVY_PATH = 'C:\\Users\\keshr\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AquaSecurity.Trivy_Microsoft.Winget.Source_8wekyb3d8bbwe\\trivy.exe'
     }
 
@@ -134,6 +136,27 @@ pipeline {
                 '''
             }
         }
+
+        stage('Deploy Application') {
+            steps {
+                bat '''
+                echo ========================================
+                echo Deploying React Application...
+                echo ========================================
+
+                docker stop %CONTAINER_NAME% 2>nul || echo No existing container to stop
+
+                docker rm %CONTAINER_NAME% 2>nul || echo No existing container to remove
+
+                docker run -d --name %CONTAINER_NAME% -p 3000:80 %IMAGE_NAME%:%IMAGE_TAG%
+
+                echo ========================================
+                echo Application deployed successfully!
+                echo Open: http://localhost:3000
+                echo ========================================
+                '''
+            }
+        }
     }
 
     post {
@@ -141,13 +164,13 @@ pipeline {
             echo '========================================'
             echo 'PIPELINE SUCCESSFUL!'
             echo '========================================'
-            echo 'Source code checked out successfully.'
             echo 'Java and Node.js verified.'
             echo 'Dependencies installed successfully.'
             echo 'SonarQube analysis completed.'
             echo 'React application built successfully.'
             echo 'Docker image built successfully.'
             echo 'Trivy security scan completed.'
+            echo 'Application deployed successfully.'
             echo '========================================'
         }
 
