@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        sonarQubeScanner 'SonarQube Scanner'
+    }
+
     stages {
 
         stage('Checkout') {
@@ -13,6 +17,20 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 bat 'npm ci'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    bat '''
+                        sonar-scanner ^
+                        -Dsonar.projectKey=react-cicd-project ^
+                        -Dsonar.projectName=react-cicd-project ^
+                        -Dsonar.sources=src ^
+                        -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                    '''
+                }
             }
         }
 
