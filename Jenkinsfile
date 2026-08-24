@@ -66,7 +66,6 @@ pipeline {
                         -Dsonar.projectKey=react-cicd-project ^
                         -Dsonar.projectName=react-cicd-project ^
                         -Dsonar.sources=src ^
-                        -Dsonar.sourceEncoding=UTF-8 ^
                         -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.svg
                         """
                     }
@@ -77,10 +76,7 @@ pipeline {
         stage('Build Application') {
             steps {
                 bat '''
-                echo ========================================
                 echo Building React application...
-                echo ========================================
-
                 npm run build
                 '''
             }
@@ -89,9 +85,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 bat '''
-                echo ========================================
                 echo Building Docker image...
-                echo ========================================
 
                 docker build -t %IMAGE_NAME%:%IMAGE_TAG% .
                 '''
@@ -106,9 +100,8 @@ pipeline {
                 echo ========================================
 
                 if not exist "%TRIVY_PATH%" (
-                    echo ERROR: Trivy executable was not found.
-                    echo Expected location:
-                    echo %TRIVY_PATH%
+                    echo ERROR: Trivy executable not found!
+                    echo Please update TRIVY_PATH in Jenkinsfile.
                     exit /b 1
                 )
 
@@ -121,7 +114,7 @@ pipeline {
             steps {
                 bat '''
                 echo ========================================
-                echo Scanning Docker image...
+                echo Running Trivy security scan...
                 echo ========================================
 
                 "%TRIVY_PATH%" image --severity HIGH,CRITICAL --exit-code 0 %IMAGE_NAME%:%IMAGE_TAG%
@@ -133,15 +126,12 @@ pipeline {
     post {
         success {
             echo '========================================'
-            echo 'CI/CD PIPELINE COMPLETED SUCCESSFULLY!'
-            echo '========================================'
-            echo 'Checkout completed.'
-            echo 'Java and Node.js verified.'
-            echo 'Dependencies installed.'
+            echo 'PIPELINE SUCCESSFUL!'
             echo 'SonarQube analysis completed.'
-            echo 'React application built.'
-            echo 'Docker image built.'
+            echo 'React application built successfully.'
+            echo 'Docker image built successfully.'
             echo 'Trivy security scan completed.'
+            echo '========================================'
         }
 
         failure {
