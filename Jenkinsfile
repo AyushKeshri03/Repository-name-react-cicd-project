@@ -2,14 +2,13 @@ pipeline {
     agent any
 
     tools {
-        // This name must exactly match the JDK name in Jenkins:
-        // Manage Jenkins -> Tools -> JDK installations
         jdk 'JDK25'
     }
 
     environment {
         IMAGE_NAME = 'react-cicd-project'
-        IMAGE_TAG = 'latest'
+        JAVA_HOME = 'C:\\Users\\keshr\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot'
+        PATH = "${JAVA_HOME}\\bin;${env.PATH}"
     }
 
     stages {
@@ -18,6 +17,19 @@ pipeline {
             steps {
                 echo 'Checking out source code...'
                 checkout scm
+            }
+        }
+
+        stage('Check Java') {
+            steps {
+                bat '''
+                    echo ========================================
+                    echo Checking Java installation...
+                    echo ========================================
+
+                    echo JAVA_HOME = %JAVA_HOME%
+                    java -version
+                '''
             }
         }
 
@@ -32,21 +44,14 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool(
-                        name: 'SonarQube_Scanner',
-                        type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-                    )
+                    def scannerHome = tool 'SonarQube Scanner'
 
                     withSonarQubeEnv('SonarQube') {
                         bat """
-                            echo JAVA_HOME=%JAVA_HOME%
-                            java -version
-
                             "${scannerHome}\\bin\\sonar-scanner.bat" ^
                             -Dsonar.projectKey=react-cicd-project ^
                             -Dsonar.projectName=react-cicd-project ^
-                            -Dsonar.sources=src ^
-                            -Dsonar.sourceEncoding=UTF-8
+                            -Dsonar.sources=src
                         """
                     }
                 }
@@ -64,50 +69,27 @@ pipeline {
         stage('Docker Build') {
             steps {
                 bat '''
-                    docker build -t %IMAGE_NAME%:%IMAGE_TAG% .
+                    docker build -t %IMAGE_NAME%:latest .
                 '''
             }
         }
 
         stage('Trivy Security Scan') {
             steps {
-                script {
-                    def trivyPath = ''
-
-                    // Try to find Trivy from Jenkins' environment
-                    def result = bat(
-                        script: '@where trivy',
-                        returnStatus: true
-                    )
-
-                    if (result == 0) {
-                        trivyPath = 'trivy'
-                    } else {
-                        error '''
-Trivy was not found by the Jenkins service.
-
-Make sure Trivy is installed and available in the Windows system PATH.
-After adding Trivy to PATH, restart the Jenkins service and run the pipeline again.
-                        '''
-                    }
-
-                    bat """
-                        ${trivyPath} image ^
-                        --scanners vuln ^
-                        --severity HIGH,CRITICAL ^
-                        --exit-code 0 ^
-                        %IMAGE_NAME%:%IMAGE_TAG%
-                    """
-                }
+                bat '''
+                    trivy image --severity HIGH,CRITICAL --exit-code 0 %IMAGE_NAME%:latest
+                '''
             }
         }
     }
 
     post {
+
         success {
             echo '========================================'
             echo 'CI/CD Pipeline completed successfully!'
             echo 'SonarQube analysis completed.'
+            echo 'Application build completed.'
             echo 'Docker image built successfully.'
             echo 'Trivy security scan completed.'
             echo '========================================'
