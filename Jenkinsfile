@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        sonarRunner 'SonarQube Scanner'
-    }
-
     stages {
 
         stage('Checkout') {
@@ -22,13 +18,20 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    bat '''
-                        sonar-scanner ^
-                        -Dsonar.projectKey=react-cicd-project ^
-                        -Dsonar.projectName=react-cicd-project ^
-                        -Dsonar.sources=src
-                    '''
+                script {
+                    def scannerHome = tool(
+                        name: 'SonarQube Scanner',
+                        type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    )
+
+                    withSonarQubeEnv('SonarQube') {
+                        bat """
+                            "${scannerHome}\\bin\\sonar-scanner.bat" ^
+                            -Dsonar.projectKey=react-cicd-project ^
+                            -Dsonar.projectName=react-cicd-project ^
+                            -Dsonar.sources=src
+                        """
+                    }
                 }
             }
         }
