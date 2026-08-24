@@ -49,7 +49,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 bat '''
+                echo ========================================
                 echo Installing project dependencies...
+                echo ========================================
+
                 npm ci
                 '''
             }
@@ -62,11 +65,16 @@ pipeline {
 
                     withSonarQubeEnv('SonarQube') {
                         bat """
+                        echo ========================================
+                        echo Running SonarQube Analysis...
+                        echo ========================================
+
                         "${scannerHome}\\bin\\sonar-scanner.bat" ^
                         -Dsonar.projectKey=react-cicd-project ^
                         -Dsonar.projectName=react-cicd-project ^
                         -Dsonar.sources=src ^
-                        -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.svg
+                        -Dsonar.sourceEncoding=UTF-8 ^
+                        -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg
                         """
                     }
                 }
@@ -76,7 +84,10 @@ pipeline {
         stage('Build Application') {
             steps {
                 bat '''
-                echo Building React application...
+                echo ========================================
+                echo Building React Application...
+                echo ========================================
+
                 npm run build
                 '''
             }
@@ -85,7 +96,9 @@ pipeline {
         stage('Docker Build') {
             steps {
                 bat '''
-                echo Building Docker image...
+                echo ========================================
+                echo Building Docker Image...
+                echo ========================================
 
                 docker build -t %IMAGE_NAME%:%IMAGE_TAG% .
                 '''
@@ -101,7 +114,7 @@ pipeline {
 
                 if not exist "%TRIVY_PATH%" (
                     echo ERROR: Trivy executable not found!
-                    echo Please update TRIVY_PATH in Jenkinsfile.
+                    echo TRIVY_PATH = %TRIVY_PATH%
                     exit /b 1
                 )
 
@@ -114,7 +127,7 @@ pipeline {
             steps {
                 bat '''
                 echo ========================================
-                echo Running Trivy security scan...
+                echo Running Trivy Security Scan...
                 echo ========================================
 
                 "%TRIVY_PATH%" image --severity HIGH,CRITICAL --exit-code 0 %IMAGE_NAME%:%IMAGE_TAG%
@@ -127,6 +140,10 @@ pipeline {
         success {
             echo '========================================'
             echo 'PIPELINE SUCCESSFUL!'
+            echo '========================================'
+            echo 'Source code checked out successfully.'
+            echo 'Java and Node.js verified.'
+            echo 'Dependencies installed successfully.'
             echo 'SonarQube analysis completed.'
             echo 'React application built successfully.'
             echo 'Docker image built successfully.'
@@ -137,12 +154,15 @@ pipeline {
         failure {
             echo '========================================'
             echo 'PIPELINE FAILED!'
-            echo 'Check the Jenkins console output.'
+            echo '========================================'
+            echo 'Check the Jenkins Console Output.'
             echo '========================================'
         }
 
         always {
+            echo '========================================'
             echo 'Pipeline execution finished.'
+            echo '========================================'
         }
     }
 }
