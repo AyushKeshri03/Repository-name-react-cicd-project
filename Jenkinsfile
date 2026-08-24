@@ -3,17 +3,11 @@ pipeline {
 
     environment {
         JAVA_HOME = 'C:\\Users\\keshr\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot'
-        PATH = "${JAVA_HOME}\\bin;${env.PATH}"
 
         IMAGE_NAME = 'react-cicd-project'
         IMAGE_TAG = 'latest'
 
-        // CHANGE THIS ONLY IF YOUR TRIVY.EXE IS IN A DIFFERENT LOCATION
-        TRIVY_PATH = 'C:\\ProgramData\\chocolatey\\bin\\trivy.exe'
-    }
-
-    tools {
-        nodejs 'NodeJS'
+        TRIVY_PATH = 'C:\\Users\\keshr\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AquaSecurity.Trivy_Microsoft.Winget.Source_8wekyb3d8bbwe\\trivy.exe'
     }
 
     stages {
@@ -21,12 +15,11 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Checking out source code...'
-
                 checkout scm
             }
         }
 
-        stage('Check Java') {
+        stage('Check Java and Node') {
             steps {
                 bat '''
                 echo ========================================
@@ -40,7 +33,15 @@ pipeline {
                     exit /b 1
                 )
 
-                java -version
+                "%JAVA_HOME%\\bin\\java.exe" -version
+
+                echo.
+                echo ========================================
+                echo Checking Node.js installation...
+                echo ========================================
+
+                node --version
+                npm --version
                 '''
             }
         }
@@ -48,6 +49,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 bat '''
+                echo Installing project dependencies...
                 npm ci
                 '''
             }
@@ -96,7 +98,7 @@ pipeline {
             }
         }
 
-        stage('Trivy Security Scan') {
+        stage('Check Trivy') {
             steps {
                 bat '''
                 echo ========================================
@@ -104,17 +106,22 @@ pipeline {
                 echo ========================================
 
                 if not exist "%TRIVY_PATH%" (
-                    echo ERROR: Trivy executable not found at:
+                    echo ERROR: Trivy executable was not found.
+                    echo Expected location:
                     echo %TRIVY_PATH%
-                    echo.
-                    echo Please update TRIVY_PATH in Jenkinsfile.
                     exit /b 1
                 )
 
                 "%TRIVY_PATH%" --version
+                '''
+            }
+        }
 
+        stage('Trivy Security Scan') {
+            steps {
+                bat '''
                 echo ========================================
-                echo Scanning Docker image for vulnerabilities...
+                echo Scanning Docker image...
                 echo ========================================
 
                 "%TRIVY_PATH%" image --severity HIGH,CRITICAL --exit-code 0 %IMAGE_NAME%:%IMAGE_TAG%
@@ -124,17 +131,17 @@ pipeline {
     }
 
     post {
-
         success {
             echo '========================================'
             echo 'CI/CD PIPELINE COMPLETED SUCCESSFULLY!'
             echo '========================================'
-            echo 'Source code checked out successfully.'
-            echo 'Dependencies installed successfully.'
-            echo 'SonarQube analysis completed successfully.'
-            echo 'React application built successfully.'
-            echo 'Docker image built successfully.'
-            echo 'Trivy security scan completed successfully.'
+            echo 'Checkout completed.'
+            echo 'Java and Node.js verified.'
+            echo 'Dependencies installed.'
+            echo 'SonarQube analysis completed.'
+            echo 'React application built.'
+            echo 'Docker image built.'
+            echo 'Trivy security scan completed.'
         }
 
         failure {
